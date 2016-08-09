@@ -229,7 +229,9 @@ In order to apply the `Roboto` font to this element, make sure you've imported `
       attached: function() {
         this.setAttribute('aria-checked', !!this.checked);
         this.setAttribute('aria-disabled', !!this.disabled);
+      },
 
+      _updateInkSize: function() {
         var inkSize = this.getComputedStyleValue('--calculated-paper-checkbox-ink-size');
         // If unset, compute and set the default `--paper-checkbox-ink-size`.
         if (inkSize === '-1px') {
@@ -273,10 +275,12 @@ In order to apply the `Roboto` font to this element, make sure you've imported `
       },
 
       _rippleDown: function() {
+        this._updateInkSize();
         this.getRipple().downAction();
       },
 
       _rippleUp: function() {
+        this._updateInkSize();
         this.getRipple().upAction();
       },
 

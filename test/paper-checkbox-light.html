@@ -141,6 +141,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         setup(function() {
           checkboxes = fixture('WithDifferentSizes2');
+          checkboxes.forEach(function(checkbox) {
+            // Trigger ink size calculation.
+            MockInteractions.tap(checkbox);
+          });
         });
 
         test('`--paper-checkbox-ink-size` sets the ink size', function() {
