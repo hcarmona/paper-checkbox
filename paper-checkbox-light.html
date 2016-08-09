@@ -10,7 +10,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../paper-styles/default-theme.html">
-<link rel="import" href="../paper-behaviors/paper-ripple-behavior.html">
+<link rel="import" href="../paper-ripple/paper-ripple.html">
 
 <!--
 Material design: [Checkbox](https://www.google.com/design/spec/components/selection-controls.html#selection-controls-checkbox)
@@ -193,14 +193,16 @@ In order to apply the `Roboto` font to this element, make sure you've imported `
     Polymer({
       is: 'paper-checkbox-light',
 
-      behaviors: [
-        Polymer.PaperRippleBehavior
-      ],
-
       hostAttributes: {
         role: 'checkbox',
         tabindex: 0
       },
+
+      /**
+       * Focus events occuring less than this value (in milliseconds) after a
+       * 'down' event are considered to be the result of a pointer.
+       */
+      __POINTER_FOCUS_WINDOW: 30,
 
       properties: {
         checked: {
@@ -215,20 +217,38 @@ In order to apply the `Roboto` font to this element, make sure you've imported `
           reflectToAttribute: true,
           observer: '_disabledChanged'
         },
+
+        noink: {
+          type: Boolean
+        },
       },
 
       listeners: {
         'tap': '_onTap',
         'keypress': '_onKeypress',
-        'down': '_rippleDown',
-        'up': '_rippleUp',
-        'focus': '_rippleDown',
-        'blur': '_rippleUp'
+        'down': '_onDown',
+        'up': '_onUp',
+        'focus': '_onFocus',
+        'blur': '_onBlur'
+      },
+
+      created: function() {
+        this._lastDown = 0;
       },
 
       attached: function() {
-        this.setAttribute('aria-checked', !!this.checked);
-        this.setAttribute('aria-disabled', !!this.disabled);
+        Polymer.RenderStatus.afterNextRender(this, function() {
+          this.setAttribute('aria-checked', !!this.checked);
+          this.setAttribute('aria-disabled', !!this.disabled);
+        });
+      },
+
+      _checkedChanged: function(checked) {
+        this.setAttribute('aria-checked', this.checked);
+      },
+
+      _disabledChanged: function(disabled) {
+        this.setAttribute('aria-disabled', this.disabled);
       },
 
       _updateInkSize: function() {
@@ -267,29 +287,40 @@ In order to apply the `Roboto` font to this element, make sure you've imported `
         }
       },
 
-      _createRipple: function() {
-        var ripple = Polymer.PaperRippleBehavior._createRipple.call(this);
-        ripple.center = true;
-        ripple.classList.add('circle');
-        return ripple;
-      },
-
-      _rippleDown: function() {
+      _onDown: function() {
+        this._lastDown = Date.now();
         this._updateInkSize();
-        this.getRipple().downAction();
       },
 
-      _rippleUp: function() {
+      _onUp: function() {
+        this._getRipple().holdDown = false;
+      },
+
+      _onFocus: function() {
         this._updateInkSize();
-        this.getRipple().upAction();
+        var ripple = this._getRipple();
+        if ((Date.now() - this._lastDown) > this.__POINTER_FOCUS_WINDOW) {
+          ripple.holdDown = true;
+          this._lastDown = 0;
+          ripple.downAction();
+        }
       },
 
-      _checkedChanged: function(checked) {
-        this.setAttribute('aria-checked', this.checked);
+      _onBlur: function() {
+        var ripple = this._getRipple()
+        ripple.holdDown = false;
+        ripple.upAction();
       },
 
-      _disabledChanged: function(disabled) {
-        this.setAttribute('aria-disabled', this.disabled);
+      _getRipple: function() {
+        if (!this._ripple) {
+          var ripple = document.createElement('paper-ripple');
+          ripple.center = true;
+          ripple.classList.add('circle');
+          Polymer.dom(this.root).appendChild(ripple);
+          this._ripple = ripple;
+        }
+        return this._ripple;
       },
     });
   </script>
